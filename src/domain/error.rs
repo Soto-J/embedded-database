@@ -1,10 +1,9 @@
-use bincode::{
-    Encode,
-    error::{DecodeError, EncodeError},
-};
+use bincode::error::{DecodeError, EncodeError};
 
 #[derive(Debug)]
 pub enum DatabaseError {
+    UserNotFound,
+
     // JSON
     JsonSerializationError(serde_json::Error),
     JsonDeserializationError(serde_json::Error),

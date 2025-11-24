@@ -1,18 +1,10 @@
+use crate::helpers::create_mock_data;
+
 use criterion::{Criterion, criterion_group, criterion_main};
-use embed_db::{
-    domain::mock_data::User,
-    storage::json::{MyBTree, MyMap},
-};
+use embed_db::Database;
 use std::hint::black_box;
 
-fn create_mock_data() -> Vec<User> {
-    (0..1000)
-        .map(|i| User {
-            id: i.to_string(),
-            name: format!("User {}", i),
-        })
-        .collect()
-}
+mod helpers;
 
 fn bench_insert(c: &mut Criterion) {
     let mock_data = create_mock_data();
@@ -21,7 +13,7 @@ fn bench_insert(c: &mut Criterion) {
 
     group.bench_function("HashMap insert 1k", |b| {
         b.iter(|| {
-            let mut map = MyMap::default();
+            let mut map = Database::default().json_map;
 
             for user in &mock_data {
                 map.insert(black_box(user.clone())).unwrap();
@@ -33,7 +25,7 @@ fn bench_insert(c: &mut Criterion) {
 
     group.bench_function("Btree insert 1k", |b| {
         b.iter(|| {
-            let mut btree = MyBTree::default();
+            let mut btree = Database::default().json_btree;
 
             for user in &mock_data {
                 btree.insert(black_box(user.clone())).unwrap();
@@ -49,12 +41,11 @@ fn bench_insert(c: &mut Criterion) {
 fn bench_get(c: &mut Criterion) {
     let mock_data = create_mock_data();
 
-    let mut map = MyMap::default();
-    let mut btree = MyBTree::default();
+    let mut db = Database::default();
 
     for user in &mock_data {
-        map.insert(user.clone()).unwrap();
-        btree.insert(user.clone()).unwrap();
+        db.json_map.insert(user.clone()).unwrap();
+        db.json_btree.insert(user.clone()).unwrap();
     }
 
     let mut group = c.benchmark_group("Get Operation");
@@ -62,7 +53,7 @@ fn bench_get(c: &mut Criterion) {
     group.bench_function("HashMap get 1k", |b| {
         b.iter(|| {
             for user in &mock_data {
-                black_box(map.get(&user.id).expect("Failed to get user"));
+                black_box(db.json_map.get(&user.id).expect("Failed to get user"));
             }
         });
     });
@@ -70,7 +61,11 @@ fn bench_get(c: &mut Criterion) {
     group.bench_function("Btree get 1k", |b| {
         b.iter(|| {
             for user in &mock_data {
-                black_box(btree.get(black_box(&user.id)).expect("Failed to get user"));
+                black_box(
+                    db.json_btree
+                        .get(black_box(&user.id))
+                        .expect("Failed to get user"),
+                );
             }
         });
     });
@@ -86,7 +81,7 @@ fn bench_delete(c: &mut Criterion) {
     group.bench_function("HashMap delete 1k", |b| {
         b.iter_batched(
             || {
-                let mut map = MyMap::default();
+                let mut map = Database::default().json_map;
                 for user in &mock_data {
                     map.insert(user.clone()).unwrap();
                 }
@@ -95,7 +90,10 @@ fn bench_delete(c: &mut Criterion) {
             },
             |mut map| {
                 for user in &mock_data {
-                    black_box(map.delete(&user.id));
+                    black_box(
+                        map.delete(&user.id)
+                            .expect(&format!("Failed to delete {:?}", user)),
+                    );
                 }
             },
             // This tells Criterion how often to re-run the setup:
@@ -108,7 +106,7 @@ fn bench_delete(c: &mut Criterion) {
     group.bench_function("Btree delete 1k", |b| {
         b.iter_batched(
             || {
-                let mut btree = MyBTree::default();
+                let mut btree = Database::default().json_btree;
                 for user in &mock_data {
                     btree.insert(user.clone()).unwrap();
                 }
@@ -116,7 +114,11 @@ fn bench_delete(c: &mut Criterion) {
             },
             |mut btree| {
                 for user in &mock_data {
-                    black_box(btree.delete(&user.id));
+                    black_box(
+                        btree
+                            .delete(&user.id)
+                            .expect(&format!("Failed to delete {:?}", user)),
+                    );
                 }
             },
             criterion::BatchSize::LargeInput,
