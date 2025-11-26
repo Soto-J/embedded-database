@@ -11,7 +11,7 @@ pub struct BinaryHashMap {
 
 impl BinaryHashMap {
     pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
-        let bytes = bincode::encode_to_vec(user.clone().id, config::standard())
+        let bytes = bincode::encode_to_vec(user.clone(), config::standard())
             .map_err(|e| DatabaseError::BincodeEncodeError(e))?;
 
         self.map.entry(user.id).or_insert(bytes);
