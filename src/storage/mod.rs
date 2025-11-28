@@ -1,2 +1,4 @@
-pub mod binary;
-pub mod json;
+pub mod core;
+
+#[cfg(feature = "std")]
+pub mod std;

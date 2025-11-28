@@ -1,4 +1,4 @@
-use crate::helpers::create_mock_data;
+#![cfg(feature = "std")]
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use embed_db::Database;
@@ -7,7 +7,7 @@ use std::hint::black_box;
 mod helpers;
 
 fn bench_insert(c: &mut Criterion) {
-    let mock_data = create_mock_data();
+    let mock_data = helpers::create_mock_data();
 
     let mut group = c.benchmark_group("Insert Operations");
 
@@ -39,7 +39,7 @@ fn bench_insert(c: &mut Criterion) {
 }
 
 fn bench_get(c: &mut Criterion) {
-    let mock_data = create_mock_data();
+    let mock_data = helpers::create_mock_data();
 
     let mut db = Database::default();
 
@@ -74,7 +74,7 @@ fn bench_get(c: &mut Criterion) {
 }
 
 fn bench_delete(c: &mut Criterion) {
-    let mock_data = create_mock_data();
+    let mock_data = helpers::create_mock_data();
 
     let mut group = c.benchmark_group("Delete Operation");
 
