@@ -1,27 +1,26 @@
-use crate::{domain::DatabaseError, domain::mock_data::User};
-
-use bincode::config;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+use crate::{domain::DatabaseError, domain::mock_data::User};
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct BinaryBTree {
-    pub btree: BTreeMap<String, Vec<u8>>,
+pub struct JsonBTree {
+    pub btree: BTreeMap<String, String>,
 }
 
-impl BinaryBTree {
+impl JsonBTree {
     pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
-        let bytes = bincode::encode_to_vec(&user, config::standard())
-            .map_err(|e| DatabaseError::BincodeEncodeError(e))?;
+        let record =
+            serde_json::to_string(&user).map_err(|e| DatabaseError::JsonSerializationError(e))?;
 
-        self.btree.entry(user.id).or_insert(bytes);
+        self.btree.entry(user.id).or_insert(record);
         Ok(())
     }
 
     pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
-        if let Some(bytes) = self.btree.get(key.as_ref()) {
-            let (user, _bytes) = bincode::decode_from_slice(&bytes, config::standard())
-                .map_err(|e| DatabaseError::BincodeDecodeError(e))?;
+        if let Some(value) = self.btree.get(key.as_ref()) {
+            let user: User = serde_json::from_str(value)
+                .map_err(|e| DatabaseError::JsonDeserializationError(e))?;
 
             return Ok(Some(user));
         }
@@ -42,12 +41,13 @@ impl BinaryBTree {
 
 #[cfg(test)]
 mod test {
+    use crate::domain::mock_data::create_mock_user;
+
     use super::*;
-    use crate::storage::json::create_mock_user;
 
     #[test]
     fn should_insert_record() {
-        let mut btree = BinaryBTree::default();
+        let mut btree = JsonBTree::default();
 
         let user = create_mock_user();
 
@@ -58,7 +58,7 @@ mod test {
 
     #[test]
     fn should_return_record() {
-        let mut btree = BinaryBTree::default();
+        let mut btree = JsonBTree::default();
 
         let user = create_mock_user();
 
@@ -73,7 +73,7 @@ mod test {
 
     #[test]
     fn should_delete_record() {
-        let mut btree = BinaryBTree::default();
+        let mut btree = JsonBTree::default();
 
         let user = create_mock_user();
 

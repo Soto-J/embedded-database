@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use bincode::{Decode, Encode, config};
+use bincode::config;
+use serde::{Deserialize, Serialize};
 
 use crate::{domain::DatabaseError, domain::mock_data::User};
 
-#[derive(Debug, Default, Clone, Encode, Decode)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BinaryHashMap {
     pub map: HashMap<String, Vec<u8>>,
 }
