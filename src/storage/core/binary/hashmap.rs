@@ -3,7 +3,7 @@ use bincode::{Decode, Encode};
 
 #[derive(Debug, Default, Clone, Encode, Decode)]
 pub struct BinaryHashMap {
-    // pub map: HashMap<String, Vec<u8>>,
+    // pub map:
 }
 
 impl BinaryHashMap {

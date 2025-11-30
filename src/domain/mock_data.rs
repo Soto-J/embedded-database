@@ -25,7 +25,7 @@ pub fn create_mock_user() -> User {
 }
 
 #[cfg(not(feature = "std"))]
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct User {
     pub id: String<32>,
     pub name: String<64>,
