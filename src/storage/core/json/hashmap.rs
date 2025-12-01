@@ -1,27 +1,34 @@
-use crate::domain::{DatabaseError, mock_data::User};
+use crate::domain::{CoreError, DatabaseError, mock_data::User};
 
-use heapless::{String, index_map::FnvIndexMap};
 use serde::{Deserialize, Serialize};
+use serde_json_core::{
+    self,
+    heapless::{FnvIndexMap, String},
+};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct JsonHashMap {
-    pub map: FnvIndexMap<String<32>, String<32>, 64>,
+    pub map: FnvIndexMap<String<256>, String<512>, 64>,
 }
 
 impl JsonHashMap {
     pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
-        let value: String<32> =
-            serde_json::to_string(&user).map_err(|e| DatabaseError::JsonSerializationError(e))?;
+        let value: String<512> =
+            serde_json_core::to_string(&user).map_err(|e| CoreError::JsonSerializationError(e))?;
+        let key = user.id;
 
-        self.map.insert(user.id, value);
+        self.map
+            .insert(key, value)
+            .map_err(|_| CoreError::InsertionFailed)?;
+
+        Ok(())
+    }
+
+    pub fn get(&self, key: String<256>) -> Result<Option<User>, DatabaseError> {
         todo!()
     }
 
-    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
-        todo!()
-    }
-
-    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
+    pub fn delete(&mut self, key: String<256>) -> Result<Option<User>, DatabaseError> {
         todo!()
     }
 }
