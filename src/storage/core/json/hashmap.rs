@@ -25,11 +25,24 @@ impl JsonHashMap {
     }
 
     pub fn get(&self, key: String<256>) -> Result<Option<User>, DatabaseError> {
-        todo!()
+        if let Some(value) = self.map.get(&key) {
+            let (user, _): (User, usize) = serde_json_core::from_str(value)
+                .map_err(|e| CoreError::JsonDeserializationError(e))?;
+
+            return Ok(Some(user));
+        };
+
+        Ok(None)
     }
 
     pub fn delete(&mut self, key: String<256>) -> Result<Option<User>, DatabaseError> {
-        todo!()
+        if let Some(user) = self.get(key.clone())? {
+            self.map.remove(&key);
+
+            return Ok(Some(user));
+        }
+
+        Ok(None)
     }
 }
 

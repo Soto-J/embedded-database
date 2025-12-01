@@ -1,21 +1,19 @@
 use crate::domain::{DatabaseError, mock_data::User};
-use bincode::{Decode, Encode};
+use heapless::{String, index_map::FnvIndexMap};
 
-#[derive(Debug, Default, Clone, Encode, Decode)]
+#[derive(Debug, Default, Clone)]
 pub struct BinaryHashMap {
-    // pub map:
+    pub map: FnvIndexMap<String<256>, String<512>, 64>,
 }
 
 impl BinaryHashMap {
-    pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
+    pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {}
+
+    pub fn get(&self, key: String<256>) -> Result<Option<User>, DatabaseError> {
         todo!()
     }
 
-    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
-        todo!()
-    }
-
-    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
+    pub fn delete(&mut self, key: String<256>) -> Result<Option<User>, DatabaseError> {
         todo!()
     }
 }

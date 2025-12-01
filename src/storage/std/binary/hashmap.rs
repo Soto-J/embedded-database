@@ -1,9 +1,8 @@
-use std::collections::HashMap;
+use crate::{domain::DatabaseError, domain::mock_data::User};
 
 use bincode::config;
 use serde::{Deserialize, Serialize};
-
-use crate::{domain::DatabaseError, domain::mock_data::User};
+use std::collections::HashMap;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BinaryHashMap {
