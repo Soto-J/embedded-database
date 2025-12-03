@@ -1,10 +1,9 @@
 use crate::domain::{CoreError, DatabaseError, mock_data::User};
 
+use heapless::{String, index_map::FnvIndexMap};
 use serde::{Deserialize, Serialize};
-use serde_json_core::{
-    self,
-    heapless::{FnvIndexMap, String},
-};
+
+// use serde_json_core::{self, heapless::FnvIndexMap};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct JsonHashMap {
@@ -13,12 +12,20 @@ pub struct JsonHashMap {
 
 impl JsonHashMap {
     pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
-        let value: String<512> =
-            serde_json_core::to_string(&user).map_err(|e| CoreError::JsonSerializationError(e))?;
-        let key = user.id;
+        let mut buf = [0u8; 512];
+
+        // Serialize user into the buffer
+        let used = serde_json_core::ser::to_slice(&user, &mut buf)
+            .map_err(|e| CoreError::JsonSerializationError(e))?;
+
+        // Convert &[u8] -> heapless::String<512>
+        let mut value: heapless::String<512> = heapless::String::new();
+        value
+            .push_str(core::str::from_utf8(&buf[..used]).unwrap())
+            .map_err(|_| CoreError::InsertionFailed)?;
 
         self.map
-            .insert(key, value)
+            .insert(user.id, value)
             .map_err(|_| CoreError::InsertionFailed)?;
 
         Ok(())

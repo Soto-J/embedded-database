@@ -1,4 +1,5 @@
 use bincode::error::{self, DecodeError, EncodeError};
+use heapless::CapacityError;
 use serde_json_core::heapless::String;
 use thiserror::Error;
 
@@ -43,7 +44,9 @@ pub enum CoreError {
 
     // Bincode
     #[error("bincode error: {0:?}")]
-    BincodeEncodeError(EncodeError),
+    CapacityError(#[from] CapacityError),
+    #[error("bincode error: {0:?}")]
+    BincodeEncodeError(#[from] postcard::Error),
     #[error("failed to decode data: {0:?}")]
-    BincodeDecodeError(DecodeError),
+    BincodeDecodeError(postcard::Error),
 }

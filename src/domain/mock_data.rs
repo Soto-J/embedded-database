@@ -1,6 +1,8 @@
 use crate::domain::CoreError;
 
+#[cfg(feature = "std")]
 use bincode::{Decode, Encode};
+
 use core::fmt::Write;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -11,7 +13,9 @@ use std::string::String;
 
 // For no_std: import heapless String
 #[cfg(not(feature = "std"))]
-use serde_json_core::heapless::String;
+use heapless::String;
+// use serde_json_core::heapless::String;
+
 
 #[cfg(feature = "std")]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Encode, Decode)]
@@ -41,7 +45,7 @@ impl User {
 
         let mut id: String<256> = String::new();
 
-        write!(&mut id, "{}", uuid).map_err(|_| CoreError::UuidFormattingError)?;
+        write!(&mut id, "{}", uuid).map_err(|e| CoreError::UuidFormattingError)?;
 
         Ok(Self { id, name })
     }
