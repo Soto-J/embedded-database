@@ -43,8 +43,8 @@ impl JsonHashMap {
     }
 
     pub fn delete(&mut self, key: String<256>) -> Result<Option<User>, DatabaseError> {
-        if let Some(user) = self.get(key.clone())? {
-            self.map.remove(&key);
+        if let Some(user) = self.get(key)? {
+            self.map.remove(&user.id);
 
             return Ok(Some(user));
         }

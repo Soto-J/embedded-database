@@ -11,26 +11,33 @@ impl BinaryHashMap {
         let mut buf = [0u8; 512];
         let encoded = postcard::to_slice(&user, &mut buf)?;
 
-        let bytes = Vec::from_slice(encoded)?;
+        let value = Vec::from_slice(encoded)?;
 
         self.map
-            .insert(user.id, bytes)
+            .insert(user.id, value)
             .map_err(|_| CoreError::InsertionFailed)?;
 
         Ok(())
     }
 
-    pub fn get(&self, key: String<256>) -> Result<Option<User>, DatabaseError> {
-        let user = self
-            .map
-            .get(&key)
-            .ok_or_else(|| CoreError::InsertionFailed)?;
-        
-        todo!()
+    pub fn get(&self, key: String<256>) -> Result<Option<User>, CoreError> {
+        if let Some(user) = self.map.get(&key) {
+            let user: User = postcard::from_bytes(user.as_slice())?;
+
+            return Ok(Some(user));
+        }
+
+        Ok(None)
     }
 
     pub fn delete(&mut self, key: String<256>) -> Result<Option<User>, DatabaseError> {
-        todo!()
+        if let Some(user) = self.get(key)? {
+            self.map.remove(&user.id);
+
+            return Ok(Some(user));
+        }
+
+        Ok(None)
     }
 }
 
