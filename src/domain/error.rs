@@ -1,33 +1,19 @@
-use bincode::error::{self, DecodeError, EncodeError};
-use heapless::CapacityError;
-use serde_json_core::heapless::String;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum DatabaseError {
     #[error(transparent)]
-    Std(#[from] StdError),
-    #[error(transparent)]
     Core(#[from] CoreError),
+
+    #[cfg(feature = "std")]
+    #[error(transparent)]
+    Std(#[from] StdError),
 
     #[error("user not found")]
     UserNotFound,
 }
 
-#[derive(Debug, Error)]
-pub enum StdError {
-    // JSON
-    #[error("failed to serialize data")]
-    JsonSerializationError(serde_json::Error),
-    #[error("failed to derialize data")]
-    JsonDeserializationError(serde_json::Error),
-
-    // Bincode
-    #[error("failed to encode data")]
-    BincodeEncodeError(EncodeError),
-    #[error("failed to decode data")]
-    BincodeDecodeError(DecodeError),
-}
+use heapless::CapacityError;
 
 #[derive(Debug, Error)]
 pub enum CoreError {
@@ -49,4 +35,25 @@ pub enum CoreError {
     BincodeEncodeError(#[from] postcard::Error),
     #[error("failed to decode data: {0:?}")]
     BincodeDecodeError(postcard::Error),
+}
+
+#[cfg(feature = "std")]
+use bincode::error::{self, DecodeError, EncodeError};
+#[cfg(feature = "std")]
+use serde_json_core::heapless::String;
+
+#[cfg(feature = "std")]
+#[derive(Debug, Error)]
+pub enum StdError {
+    // JSON
+    #[error("failed to serialize data")]
+    JsonSerializationError(serde_json::Error),
+    #[error("failed to deserialize data")]
+    JsonDeserializationError(serde_json::Error),
+
+    // Bincode
+    #[error("failed to encode data")]
+    BincodeEncodeError(EncodeError),
+    #[error("failed to decode data")]
+    BincodeDecodeError(DecodeError),
 }
