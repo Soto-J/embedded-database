@@ -5,4 +5,3 @@ pub mod domain;
 pub mod storage;
 
 pub use database::*;
-

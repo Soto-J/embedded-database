@@ -1,7 +1,8 @@
+#[cfg(feature = "std")]
+use crate::storage::std::{JsonBTree, JsonHashMap};
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "std")]
-use crate::storage::std::{JsonHashMap, JsonBTree};  
+pub mod index;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Database {

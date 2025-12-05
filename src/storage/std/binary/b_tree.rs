@@ -9,8 +9,8 @@ pub struct BinaryBTree {
     pub btree: BTreeMap<String, Vec<u8>>,
 }
 
-impl BinaryBTree {
-    pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
+impl StorageEngine for BinaryBTree {
+    fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
         let bytes = bincode::encode_to_vec(&user, config::standard())
             .map_err(|e| DatabaseError::BincodeEncodeError(e))?;
 
@@ -18,7 +18,7 @@ impl BinaryBTree {
         Ok(())
     }
 
-    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
         if let Some(bytes) = self.btree.get(key.as_ref()) {
             let (user, _bytes) = bincode::decode_from_slice(&bytes, config::standard())
                 .map_err(|e| DatabaseError::BincodeDecodeError(e))?;
@@ -29,7 +29,7 @@ impl BinaryBTree {
         Ok(None)
     }
 
-    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
         if let Some(user) = self.get(key.as_ref())? {
             self.btree.remove(&user.id);
 

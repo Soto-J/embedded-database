@@ -8,8 +8,8 @@ pub struct JsonBTree {
     pub btree: BTreeMap<String, String>,
 }
 
-impl JsonBTree {
-    pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
+impl StorageEngine for JsonBTree {
+    fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
         let record =
             serde_json::to_string(&user).map_err(|e| DatabaseError::JsonSerializationError(e))?;
 
@@ -17,7 +17,7 @@ impl JsonBTree {
         Ok(())
     }
 
-    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
         if let Some(value) = self.btree.get(key.as_ref()) {
             let user: User = serde_json::from_str(value)
                 .map_err(|e| DatabaseError::JsonDeserializationError(e))?;
@@ -28,7 +28,7 @@ impl JsonBTree {
         Ok(None)
     }
 
-    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
         if let Some(user) = self.get(key.as_ref())? {
             self.btree.remove(&user.id);
 
