@@ -4,33 +4,34 @@ use std::collections::HashMap;
 use crate::{domain::DatabaseError, domain::mock_data::User};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct JsonHashMap {
+pub struct JsonHashMap<T> {
     pub map: HashMap<String, String>,
+    _marker: core::marker::PhantomData<T>,
 }
 
-impl StorageEngine for JsonHashMap {
-    fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
+impl<T> StorageEngine for JsonHashMap<T> {
+    fn insert<Key: AsRef<str>>(&mut self, key: Key, data: T) -> Result<(), DatabaseError> {
         let record =
-            serde_json::to_string(&user).map_err(|e| DatabaseError::JsonSerializationError(e))?;
+            serde_json::to_string(&data).map_err(|e| DatabaseError::JsonSerializationError(e))?;
 
-        self.map.entry(user.id).or_insert(record);
+        self.map.entry(key).or_insert(record);
         Ok(())
     }
 
-    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
-        if let Some(value) = self.map.get(key.as_ref()) {
-            let user: User = serde_json::from_str(value)
+    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<T>, DatabaseError> {
+        if let Some(data) = self.map.get(key.as_ref()) {
+            let record: T = serde_json::from_str(data)
                 .map_err(|e| DatabaseError::JsonDeserializationError(e))?;
 
-            return Ok(Some(user));
+            return Ok(Some(record));
         }
 
         Ok(None)
     }
 
-    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<T>, DatabaseError> {
         if let Some(user) = self.get(key.as_ref())? {
-            self.map.remove(&user.id);
+            self.map.remove(key);
 
             return Ok(Some(user));
         }

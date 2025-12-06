@@ -5,35 +5,36 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct BinaryBTree {
+pub struct BinaryBTree<T> {
     pub btree: BTreeMap<String, Vec<u8>>,
+    _marker: core::marker::PhantomData<T>,
 }
 
-impl StorageEngine for BinaryBTree {
-    fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
-        let bytes = bincode::encode_to_vec(&user, config::standard())
+impl<T> StorageEngine for BinaryBTree<T> {
+    fn insert<Key: AsRef<str>>(&mut self, key: Key, data: T) -> Result<(), DatabaseError> {
+        let bytes = bincode::encode_to_vec(&data, config::standard())
             .map_err(|e| DatabaseError::BincodeEncodeError(e))?;
 
-        self.btree.entry(user.id).or_insert(bytes);
+        self.btree.entry(key).or_insert(bytes);
         Ok(())
     }
 
-    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<T>, DatabaseError> {
         if let Some(bytes) = self.btree.get(key.as_ref()) {
-            let (user, _bytes) = bincode::decode_from_slice(&bytes, config::standard())
+            let (data, _bytes) = bincode::decode_from_slice(&bytes, config::standard())
                 .map_err(|e| DatabaseError::BincodeDecodeError(e))?;
 
-            return Ok(Some(user));
+            return Ok(Some(data));
         }
 
         Ok(None)
     }
 
-    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
-        if let Some(user) = self.get(key.as_ref())? {
-            self.btree.remove(&user.id);
+    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<T>, DatabaseError> {
+        if let Some(data) = self.get(key.as_ref())? {
+            self.btree.remove(&key);
 
-            return Ok(Some(user));
+            return Ok(Some(data));
         }
 
         Ok(None)

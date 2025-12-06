@@ -5,33 +5,34 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct BinaryHashMap {
+pub struct BinaryHashMap<T> {
     pub map: HashMap<String, Vec<u8>>,
+    _marker: core::marker::PhantomData<T>,
 }
 
-impl BinaryHashMap {
-    pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
-        let bytes = bincode::encode_to_vec(user.clone(), config::standard())
+impl<T> BinaryHashMap<T> {
+    pub fn insert<Key: AsRef<str>>(&mut self, key: Key, record: T) -> Result<(), DatabaseError> {
+        let bytes = bincode::encode_to_vec(record.clone(), config::standard())
             .map_err(|e| DatabaseError::BincodeEncodeError(e))?;
 
         self.map.entry(user.id).or_insert(bytes);
         Ok(())
     }
 
-    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
+    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<T>, DatabaseError> {
         if let Some(bytes) = self.map.get(key.as_ref()) {
-            let (user, _): (User, usize) = bincode::decode_from_slice(&bytes, config::standard())
+            let (record, _): (T, usize) = bincode::decode_from_slice(&bytes, config::standard())
                 .map_err(|e| DatabaseError::BincodeDecodeError(e))?;
 
-            return Ok(Some(user));
+            return Ok(Some(record));
         }
 
         Ok(None)
     }
 
-    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
-        if let Some(user) = self.get(key.as_ref())? {
-            self.map.remove(&user.id);
+    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<T>, DatabaseError> {
+        if let Some(user) = self.get(key)? {
+            self.map.remove(key);
 
             return Ok(Some(user));
         }
@@ -53,7 +54,7 @@ mod test {
             id: "100".to_string(),
         };
 
-        let response = map.insert(user);
+        let response = map.insert(user.id, user);
 
         assert!(response.is_ok())
     }
@@ -67,7 +68,7 @@ mod test {
             id: "100".to_string(),
         };
 
-        let response = map.insert(user.clone());
+        let response = map.insert(&user.id, user.clone());
 
         assert!(response.is_ok());
 

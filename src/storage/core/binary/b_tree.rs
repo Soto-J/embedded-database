@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BinaryBTree {
-    // todo!()
     // pub btree: BTreeMap<String, Vec<u8>>,
 }
 
