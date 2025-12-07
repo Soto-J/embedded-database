@@ -4,35 +4,36 @@ use std::collections::BTreeMap;
 use crate::{domain::DatabaseError, domain::mock_data::User};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct JsonBTree {
+pub struct JsonBTree<T> {
     pub btree: BTreeMap<String, String>,
+    _marker: core::marker::PhantomData<T>,
 }
 
-impl StorageEngine for JsonBTree {
-    fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
+impl<T> StorageEngine for JsonBTree<T> {
+    fn insert<Key: AsRef<T>>(&mut self, key: Key, data: T) -> Result<(), DatabaseError> {
         let record =
-            serde_json::to_string(&user).map_err(|e| DatabaseError::JsonSerializationError(e))?;
+            serde_json::to_string(&data).map_err(|e| DatabaseError::JsonSerializationError(e))?;
 
-        self.btree.entry(user.id).or_insert(record);
+        self.btree.entry(key).or_insert(record);
         Ok(())
     }
 
-    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<T>, DatabaseError> {
         if let Some(value) = self.btree.get(key.as_ref()) {
-            let user: User = serde_json::from_str(value)
+            let record: T = serde_json::from_str(value)
                 .map_err(|e| DatabaseError::JsonDeserializationError(e))?;
 
-            return Ok(Some(user));
+            return Ok(Some(record));
         }
 
         Ok(None)
     }
 
-    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
-        if let Some(user) = self.get(key.as_ref())? {
-            self.btree.remove(&user.id);
+    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<T>, DatabaseError> {
+        if let Some(record) = self.get(key.as_ref())? {
+            self.btree.remove(&key);
 
-            return Ok(Some(user));
+            return Ok(Some(record));
         }
 
         Ok(None)
