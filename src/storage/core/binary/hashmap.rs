@@ -1,4 +1,7 @@
-use crate::domain::{CoreError, DatabaseError};
+use crate::{
+    domain::{CoreError, DatabaseError},
+    storage::StorageEngine,
+};
 use heapless::{String, Vec, index_map::FnvIndexMap};
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -12,26 +15,29 @@ pub struct BinaryHashMap<T> {
     _marker: core::marker::PhantomData<T>,
 }
 
-impl<T> BinaryHashMap<T>
+impl<T> StorageEngine<T> for BinaryHashMap<T>
 where
     T: Serialize + DeserializeOwned + Clone,
 {
-    pub fn insert(&mut self, key: String<256>, record: &T) -> Result<(), CoreError> {
+    fn insert(&mut self, key: &String<256>, data: T) -> Result<(), DatabaseError> {
         let mut buf = [0u8; 512];
-        let encoded = postcard::to_slice(&record, &mut buf)?;
+        let encoded = postcard::to_slice(&data, &mut buf)
+            .map_err(|e| DatabaseError::Core(CoreError::BinaryEncodingError(e)))?;
 
-        let value = Vec::from_slice(encoded)?;
+        let value = Vec::from_slice(encoded)
+            .map_err(|e| DatabaseError::Core(CoreError::CapacityError(e)))?;
 
         self.map
-            .insert(key, value)
-            .map_err(|_| CoreError::InsertionFailed)?;
+            .insert(key.clone(), value)
+            .map_err(|_| DatabaseError::Core(CoreError::InsertionFailed))?;
 
         Ok(())
     }
 
-    pub fn get(&self, key: &String<256>) -> Result<Option<T>, CoreError> {
+    fn get(&self, key: &String<256>) -> Result<Option<T>, DatabaseError> {
         if let Some(value) = self.map.get(key) {
-            let record: T = postcard::from_bytes(value.as_slice())?;
+            let record: T = postcard::from_bytes(value.as_slice())
+                .map_err(|e| DatabaseError::Core(CoreError::BinaryDecodingError(e)))?;
 
             return Ok(Some(record));
         }
@@ -39,7 +45,7 @@ where
         Ok(None)
     }
 
-    pub fn delete(&mut self, key: &String<256>) -> Result<Option<T>, DatabaseError> {
+    fn delete(&mut self, key: &String<256>) -> Result<Option<T>, DatabaseError> {
         if let Some(user) = self.get(key)? {
             self.map.remove(key);
 

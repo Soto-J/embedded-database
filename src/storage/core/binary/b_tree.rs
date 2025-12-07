@@ -1,22 +1,30 @@
-use crate::domain::{DatabaseError, mock_data::User};
+use crate::{domain::DatabaseError, storage::StorageEngine};
 
-use serde::{Deserialize, Serialize};
+use heapless::String;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct BinaryBTree {
+pub struct BinaryBTree<T>
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
     // pub btree: BTreeMap<String, Vec<u8>>,
+    _marker: core::marker::PhantomData<T>,
 }
 
-impl BinaryBTree {
-    pub fn insert(&mut self, user: User) -> Result<(), DatabaseError> {
+impl<T> StorageEngine<T> for BinaryBTree<T>
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
+    fn insert(&mut self, key: &String<256>, data: T) -> Result<(), DatabaseError> {
         todo!()
     }
 
-    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn get(&self, key: &String<256>) -> Result<Option<T>, DatabaseError> {
         todo!()
     }
 
-    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<User>, DatabaseError> {
+    fn delete(&mut self, key: &String<256>) -> Result<Option<T>, DatabaseError> {
         todo!()
     }
 }

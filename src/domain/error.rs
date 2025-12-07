@@ -32,9 +32,9 @@ pub enum CoreError {
     #[error("bincode error: {0:?}")]
     CapacityError(#[from] CapacityError),
     #[error("bincode error: {0:?}")]
-    BincodeEncodeError(#[from] postcard::Error),
+    BinaryEncodingError(#[from] postcard::Error),
     #[error("failed to decode data: {0:?}")]
-    BincodeDecodeError(postcard::Error),
+    BinaryDecodingError(postcard::Error),
 }
 
 #[cfg(feature = "std")]

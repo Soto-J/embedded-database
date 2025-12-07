@@ -10,8 +10,11 @@ pub struct BinaryHashMap<T> {
     _marker: core::marker::PhantomData<T>,
 }
 
-impl<T> BinaryHashMap<T> {
-    pub fn insert<Key: AsRef<str>>(&mut self, key: Key, record: T) -> Result<(), DatabaseError> {
+impl<T> StorageEngine<T> for BinaryHashMap<T>
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
+    fn insert<Key: AsRef<str>>(&mut self, key: Key, record: T) -> Result<(), DatabaseError> {
         let bytes = bincode::encode_to_vec(record.clone(), config::standard())
             .map_err(|e| DatabaseError::BincodeEncodeError(e))?;
 
@@ -19,7 +22,7 @@ impl<T> BinaryHashMap<T> {
         Ok(())
     }
 
-    pub fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<T>, DatabaseError> {
+    fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<T>, DatabaseError> {
         if let Some(bytes) = self.map.get(key.as_ref()) {
             let (record, _): (T, usize) = bincode::decode_from_slice(&bytes, config::standard())
                 .map_err(|e| DatabaseError::BincodeDecodeError(e))?;
@@ -30,7 +33,7 @@ impl<T> BinaryHashMap<T> {
         Ok(None)
     }
 
-    pub fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<T>, DatabaseError> {
+    fn delete<Key: AsRef<str>>(&mut self, key: Key) -> Result<Option<T>, DatabaseError> {
         if let Some(user) = self.get(key)? {
             self.map.remove(key);
 

@@ -10,7 +10,10 @@ pub struct BinaryBTree<T> {
     _marker: core::marker::PhantomData<T>,
 }
 
-impl<T> StorageEngine for BinaryBTree<T> {
+impl<T> StorageEngine<T> for BinaryBTree<T>
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
     fn insert<Key: AsRef<str>>(&mut self, key: Key, data: T) -> Result<(), DatabaseError> {
         let bytes = bincode::encode_to_vec(&data, config::standard())
             .map_err(|e| DatabaseError::BincodeEncodeError(e))?;
