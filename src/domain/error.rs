@@ -1,3 +1,5 @@
+use core::str::Utf8Error;
+
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -21,6 +23,8 @@ pub enum CoreError {
     UuidFormattingError,
     #[error("failed to insert data")]
     InsertionFailed,
+    #[error("UTF-8 error: {0}")]
+    Utf8Error(#[from] Utf8Error),
 
     // JSON
     #[error("serde_json_core serialization error: {0:?}")]
