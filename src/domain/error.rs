@@ -23,7 +23,7 @@ pub enum CoreError {
     UuidFormattingError,
     #[error("failed to insert data")]
     InsertionFailed,
-    #[error("UTF-8 error:")]
+    #[error("UTF-8 error: {0}")]
     Utf8Error(#[from] Utf8Error),
 
     // JSON

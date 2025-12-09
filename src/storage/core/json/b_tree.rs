@@ -24,17 +24,17 @@ where
             .map_err(|e| CoreError::JsonSerializationError(e))?;
 
         // JSON output is a UTF-8 byte slice. Convert &[u8] → &str safely.
-        let uft8 = core::str::from_utf8(&buf[..used]).map_err(|e| CoreError::Utf8Error(e))?;
+        let utf8 = core::str::from_utf8(&buf[..used]).map_err(|e| CoreError::Utf8Error(e))?;
 
         // Copy UTF-8 JSON string into a fixed-capacity heapless String<512>.
         let mut value = String::<512>::new();
         value
-            .push_str(uft8)
+            .push_str(utf8)
             .map_err(|e| CoreError::CapacityError(e))?;
 
         self.btree
-            .insert(key.clone(), value)
-            .ok_or_else(|| CoreError::InsertionFailed)?;
+            .try_insert(key.clone(), value)
+            .map_err(|_| CoreError::InsertionFailed)?;
 
         Ok(())
     }
