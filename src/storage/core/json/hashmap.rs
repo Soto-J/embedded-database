@@ -21,16 +21,18 @@ where
     T: Serialize + DeserializeOwned + Clone,
 {
     fn insert(&mut self, key: &String<256>, record: T) -> Result<(), DatabaseError> {
+        // Serialize `data` into a fixed-size stack buffer (no heap allocations).
         let mut buf = [0u8; 512];
-
-        // Serialize T to buffer
         let used = serde_json_core::ser::to_slice(&record, &mut buf)
             .map_err(|e| CoreError::JsonSerializationError(e))?;
+        
+        // JSON output is a UTF-8 byte slice. Convert &[u8] → &str safely.
+        let utf8 = core::str::from_utf8(&buf[..used]).map_err(|e| CoreError::Utf8Error(e))?;
 
         // Convert &[u8] -> heapless::String<512>
-        let mut value: heapless::String<512> = heapless::String::new();
+        let mut value = heapless::String::<512>::new();
         value
-            .push_str(core::str::from_utf8(&buf[..used]).unwrap())
+            .push_str(utf8)
             .map_err(|_| CoreError::InsertionFailed)?;
 
         self.map
